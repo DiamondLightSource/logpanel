@@ -9,7 +9,7 @@ ENV REACT_APP_DEPLOY_TYPE=${DEPLOY_TYPE}
 ENV REACT_APP_VERSION=${VERSION}
 
 # Cache this layer unless dependencies change
-COPY package.json yarn.lock .yarnrc.yml .
+COPY package.json yarn.lock .yarnrc.yml ./
 COPY ./.yarn ./.yarn
 
 RUN yarn install --immutable --check-cache
