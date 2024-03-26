@@ -1,22 +1,68 @@
-
-import LogTable from './components/Table';
-import './App.css'
-import {theme} from "./theme";
 import { ThemeProvider } from '@emotion/react';
+import { useEffect, useRef} from 'react'
+import { theme } from './theme';
+// import LogTable from './components/Table';
+// import './App.css'
+// import {theme} from "./theme";
+// import { ThemeProvider } from '@emotion/react';
 
 function App() {
   
-  const data = "Garry"
+  const data = useRef();
+  useEffect(() => {
+    async function fetchData(url: string, username: string, password: string): Promise<undefined> {
+      try {
+          // Creating a basic authentication header
+          const headers = new Headers();
+          headers.append('Authorization',"Basic " + btoa(`${username}:${password}`));
+
+          // Making the fetch request
+          const response = await fetch(url, {
+              method: 'GET',
+              headers: headers
+          });
+
+          // Checking if the response is OK
+          if (!response.ok) {
+              throw new Error('Failed to fetch data');
+          }
+
+          // Parsing the response as JSON
+          const data1 = await response.json();
+          return data1;
+      } catch (error) {
+          console.error('Error fetching data:', error);
+          throw error;
+      }
+  }
+
+    const apiURL = "/api/system/journal";
+    const username = "393v5o7c1ds7h68tl6iclb3ikfb0l82jhbi0s34mtq3huf12r2f";
+    const password = "token";
+
+    (async () => {
+        try {
+            data.current = await fetchData(apiURL, username, password);
+            console.log(data.current)
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    })();
+    },[])
+
+    // return (
+    //   <h3> {data.current}</h3>
+    // )
+
 
     return (
       <ThemeProvider theme={theme}>
-      <p className='Athena Logpanel'>
-        <h2>Hello World</h2>
+      <h1>Athena Logpanel Single Call</h1>
+      <h2 className='Athena Logpanel'>
         <button className='square'>1</button>
         <label htmlFor='Log1'></label>
-        <LogTable></LogTable>
-        <h3> {data} </h3>
-      </p>
+      </h2>
+      <p> {JSON.stringify(data.current)} </p>
       </ThemeProvider>
       )
   }
