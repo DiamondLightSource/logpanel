@@ -3,9 +3,17 @@ import { useEffect, useState } from "react";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
 
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+
+
 function App() {
 
-  const [logMessage, setLog] = useState<string[]>([]);
+  const [logs, setLogs] = useState<string[]>([]);
   useEffect(() => {
     async function fetchData(
       url: string,
@@ -37,7 +45,7 @@ function App() {
         // Parsing the response as JSON
         const logdata = await response.json();
         const message = getMessage(logdata) || ["No logs found"];
-        setLog(message);
+        setLogs(message);
       } catch (error) {
         console.error("Error fetching data:", error);
         throw error;
@@ -108,7 +116,24 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
-      <BoxBasic content={<p> {logMessage} </p>}></BoxBasic>
+      <BoxBasic>
+        <TableContainer component={Paper}>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <TableBody>
+              {logs.map((log) => (
+                <TableRow
+                  key={log}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">
+                    {log}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </BoxBasic>
     </ThemeProvider>
   );
 }
