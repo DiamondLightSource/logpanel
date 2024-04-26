@@ -9,10 +9,13 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
+import { TableHead } from "@mui/material";
 
 
 function App() {
-
+  const [time, setTime] = useState<string[]>([]);
+  const [source, setSource] = useState<string[]>([]);
+  const [debug, setDebug] = useState<string[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
   useEffect(() => {
     async function fetchData(
@@ -44,7 +47,10 @@ function App() {
 
         // Parsing the response as JSON
         const logdata = await response.json();
-        const message = getMessage(logdata) || ["No logs found"];
+        const [timestamp,source,debug,message] = getMessage(logdata) ||  [["No logs found"]];
+        setTime(timestamp);
+        setSource(source);
+        setDebug(debug);
         setLogs(message);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -119,18 +125,25 @@ function App() {
       <BoxBasic>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
+            <TableHead>
+              <TableRow>
+                <TableCell>Timestamp</TableCell>
+                <TableCell>Debugging Level</TableCell>
+                <TableCell>Source</TableCell>
+                <TableCell>Log Messages</TableCell>
+              </TableRow>
+            </TableHead>
             <TableBody>
-              {logs.map((log) => (
-                <TableRow
-                  key={log}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
-                >
-                  <TableCell component="th" scope="row">
-                    {log}
-                  </TableCell>
+              {logs.map((log,index) => (
+                <TableRow>                  
+                  <TableCell>{time[index]}</TableCell>
+                  <TableCell>{debug[index]}</TableCell>
+                  <TableCell>{source[index]}</TableCell>
+                  <TableCell>{log}</TableCell>
+                  {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
                 </TableRow>
               ))}
-            </TableBody>
+            </TableBody>            
           </Table>
         </TableContainer>
       </BoxBasic>
@@ -138,27 +151,56 @@ function App() {
   );
 }
 
-function getMessage(logging: JSON): undefined | string[] {
+function getMessage(logging: JSON): undefined | string[][] {
   const data = JSON.parse(JSON.stringify(logging));
   for (const key in data.results) {
     if ("search_types" in data.results[key]) {
       const id = data.results[key].search_types;
       const message: string[] = [];
+      const timestamp: string[] =[];
+      const source: string[] =[];
+      const debug: string[] =[];
       for (const keys in id) {
         if ("messages" in id[keys]) {
           const logs = id[keys].messages;
+          // populate different components of logged data and identifying log level
           for (const msg in logs) {
-            message.push(
-              `${logs[msg]["message"]["timestamp"]} ${logs[msg]["message"]["source"]} ${logs[msg]["message"]["message"]}`
+            const formattedTimestamp = logs[msg]["message"]["timestamp"].replace(/[TZ]/g, ' ')
+            timestamp.push(
+              `${formattedTimestamp}`
             );
+            source.push(
+              `${logs[msg]["message"]["source"]}`
+            )
+            const text = logs[msg]["message"]["message"];
+            const [debug_level, log_message] = logLevel(text);
+            debug.push(debug_level);
+            message.push(log_message);
+
           }
-          return message;
+          return [timestamp,source,debug,message];
         }
       }
     }
   }
 }
 
+function logLevel(text: string): [string, string] {
+  const debug_levels = {"INFO":1,"DEBUG":2,"WARN":3,"ERROR":4};
+  const words = text.split(/\s+/);
+  const firstWord = words[0] || '';  
+  const restOfText = words.slice(2).join(' ');
+  let debug = "";
+  let message = "";
+  if (firstWord in debug_levels) {
+    debug = firstWord;
+    message = restOfText;
+  } else {
+    debug = "UNKNOWN";
+    message = text;
+  }
+  return [debug, message];
+}
 async function readFile(): Promise<string> {
   const filePath = "src/token.txt";
   const response =  await fetch(filePath) ;
