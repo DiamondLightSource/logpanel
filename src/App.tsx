@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@emotion/react";
 import { useEffect, useState } from "react";
+import Log_Menu from "./components/Log_Menu.tsx";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
 
@@ -10,10 +11,12 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { TableHead } from "@mui/material";
+import { log_levels } from "./components/Log_Levels.tsx";
 
 type getMessageReturn = [string[],string[],string[],string[],number[],string[]]
 
 function App() {
+  // API responses to be shown
   const [time, setTime] = useState<string[]>([]);
   const [host, setHost] = useState<string[]>([]);
   const [debug, setDebug] = useState<string[]>([]);
@@ -21,6 +24,11 @@ function App() {
   const [log_lvl, setLog_lvl] = useState<number[]>([]);
   const [app_name,setApp_name] = useState<string[]>([]);
 
+  // Log_Menu Props
+  const [logFilter, setLogFilter] = useState<number>(7);
+  const handleLogFilterChange = (newLogFilterValue: number) => {
+    setLogFilter(newLogFilterValue);
+  }
   useEffect(() => {
     async function fetchData(
       url: string,
@@ -128,6 +136,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
+      <Log_Menu logFilterValue={logFilter} onLogFilterChange={handleLogFilterChange}/>
       <BoxBasic>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -141,16 +150,22 @@ function App() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {logs.map((log,index) => (
-                <TableRow sx={{backgroundColor:getColor(log_lvl[index])}}>                  
+              {logs.map((log,index) => {
+                if (log_lvl[index] <= logFilter) {
+                  return (
+                  <TableRow sx={{backgroundColor:getColor(log_lvl[index])}}>                 
                   <TableCell><pre>{time[index]}</pre></TableCell>
                   <TableCell><pre>{debug[index]}</pre></TableCell>
                   <TableCell><pre>{host[index]}</pre></TableCell>
                   <TableCell><pre>{app_name[index]}</pre></TableCell>
                   <TableCell><pre>{log}</pre></TableCell>
                   {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
-                </TableRow>
-              ))}
+                </TableRow>                    
+                  );
+              } else {
+                  return null
+                }
+              })}
             </TableBody>            
           </Table>
         </TableContainer>
@@ -183,9 +198,9 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
             app_name.push(logs[msg]["message"]["application_name"]); 
             const level = logs[msg]["message"]["level"];
             const log_message = logs[msg]["message"]["full_message"];
-            const log_level_str = getLogLevel(level);
+            const log_level_str = log_levels[level] || "UNKNOWN";
             debug.push(log_level_str);
-            message.push(log_message);
+            message.push(log_message)
             log_level.push(level);
 
           }
@@ -196,19 +211,6 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
   }
 }
 
-function getLogLevel(level_val:number): string {
-  const log_levels: {[key: number]: string} = {
-    0:"EMERG",
-    1:"ALERT",
-    2:"CRIT",
-    3:"ERROR", 
-    4:"WARN", 
-    5:"NOTICE", 
-    6:"INFO",
-    7:"DEBUG",};
-  const level = log_levels[level_val] || "UNKNOWN";
-  return level;
-}
 async function readFile(): Promise<string> {
   const filePath = "src/token.txt";
   const response =  await fetch(filePath) ;
