@@ -31,25 +31,17 @@ const ACTIONS = {
   APP: "application",
 };
 
-type getMessageReturn = [
-  string[],
-  string[],
-  string[],
-  string[],
-  number[],
-  string[],
-];
-
-function App() {
-  // API responses to be shown
-  const [time, setTime] = useState<string[]>([]);
-  const [host, setHost] = useState<string[]>([]);
-  const [debug, setDebug] = useState<string[]>([]);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [log_lvl, setLog_lvl] = useState<number[]>([]);
-  const [app_name, setApp_name] = useState<string[]>([]);
-  const [logfilter, setLogfilter] = useState<number>(7);
+class MessageReturn {
+  timestamp: string[] = [];
+  host: string[] = [];
+  debug: string[] = [];
+  log_message: string[] = [];
+  log_level: number[] = [];
+  app_name: string[] = [];
+}
+  const [LogResponse,setlogResponse] = useState<MessageReturn>(new MessageReturn());
   const [logPayload, handlePayload] = useReducer(reducer, payload);
+  const [logFilter, setLogfilter] = useState(7);
 
   // Payload Modifiers based off of Application Name or Beamline
   const handleBeamline = (beamline: string) => {
@@ -120,21 +112,8 @@ function App() {
 
         // Parsing the response as JSON
         const logdata = await response.json();
-        const [timestamp, host, debug, message, log_level, app_name] =
-          getMessage(logdata) || [
-            ["No logs found"],
-            ["No logs found"],
-            ["No logs found"],
-            ["No logs found"],
-            [7],
-            ["No logs found"],
-          ];
-        setTime(timestamp);
-        setHost(host);
-        setDebug(debug);
-        setLogs(message);
-        setLog_lvl(log_level);
-        setApp_name(app_name);
+        const ApiResponse: MessageReturn = getMessage(logdata) ||  new MessageReturn();
+        setlogResponse(ApiResponse);
       } catch (error) {
         console.error("Error fetching data:", error);
         throw error;
@@ -205,33 +184,19 @@ function App() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {logs.map((log, index) => {
-                return (
-                  <TableRow
-                    sx={{ backgroundColor: getColor(log_lvl[index]) }}
-                    key={index}
-                  >
-                    <TableCell>
-                      <pre>{time[index]}</pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre>{debug[index]}</pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre>{host[index]}</pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre>{app_name[index]}</pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre>{log}</pre>
-                    </TableCell>
-                    {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
+              {LogResponse.timestamp.map((timestamp,index) => {                
+                  return (
+                  <TableRow sx={{backgroundColor:getColor(LogResponse.log_level[index])}}>                 
+                  <TableCell><pre>{timestamp}</pre></TableCell>
+                  <TableCell><pre>{LogResponse.debug[index]}</pre></TableCell>
+                  <TableCell><pre>{LogResponse.host[index]}</pre></TableCell>
+                  <TableCell><pre>{LogResponse.app_name[index]}</pre></TableCell>
+                  <TableCell>{LogResponse.log_message[index]}</TableCell>
+                  {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
                   </TableRow>
-                );
+              );
               })}
-              ,
-            </TableBody>
+            </TableBody>            
           </Table>
         </TableContainer>
       </BoxBasic>
@@ -239,16 +204,16 @@ function App() {
   );
 }
 
-function getMessage(logging: JSON): undefined | getMessageReturn {
+function getMessage(logging: JSON): MessageReturn | undefined {
   const data = JSON.parse(JSON.stringify(logging));
   for (const key in data.results) {
     if ("search_types" in data.results[key]) {
       const id = data.results[key].search_types;
-      const message: string[] = [];
-      const timestamp: string[] = [];
-      const host: string[] = [];
-      const debug: string[] = [];
-      const log_level: number[] = [];
+      const log_message: string[] = [];
+      const timestamp: string[] =[];
+      const host:string[] = []; 
+      const debug: string[] =[];
+      const log_level: number[] =[];
       const app_name: string[] = [];
       for (const keys in id) {
         if ("messages" in id[keys]) {
@@ -265,10 +230,10 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
             const log_message = logs[msg]["message"]["full_message"];
             const log_level_str = log_levels[level] || "UNKNOWN";
             debug.push(log_level_str);
-            message.push(log_message);
+            log_message.push(log_message)
             log_level.push(level);
           }
-          return [timestamp, host, debug, message, log_level, app_name];
+          return {timestamp,host,debug,log_message,log_level,app_name}  ;
         }
       }
     }
