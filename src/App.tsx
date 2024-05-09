@@ -11,14 +11,15 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { TableHead } from "@mui/material";
 
-type getMessageReturn = [string[],string[],string[],string[],number[]]
+type getMessageReturn = [string[],string[],string[],string[],number[],string[]]
 
 function App() {
   const [time, setTime] = useState<string[]>([]);
-  const [source, setSource] = useState<string[]>([]);
+  const [host, setHost] = useState<string[]>([]);
   const [debug, setDebug] = useState<string[]>([]);
   const [logs, setLogs] = useState<string[]>([]);
   const [log_lvl, setLog_lvl] = useState<number[]>([]);
+  const [app_name,setApp_name] = useState<string[]>([]);
 
   useEffect(() => {
     async function fetchData(
@@ -50,12 +51,13 @@ function App() {
 
         // Parsing the response as JSON
         const logdata = await response.json();
-        const [timestamp,source,debug,message,log_level] = getMessage(logdata) ||  [["No logs found"],["No logs found"],["No logs found"],["No logs found"],[1]];
+        const [timestamp,host,debug,message,log_level,app_name] = getMessage(logdata) ||  [["No logs found"],["No logs found"],["No logs found"],["No logs found"],[7],["No logs found"]];
         setTime(timestamp);
-        setSource(source);
+        setHost(host);
         setDebug(debug);
         setLogs(message);
         setLog_lvl(log_level);
+        setApp_name(app_name);
       } catch (error) {
         console.error("Error fetching data:", error);
         throw error;
@@ -133,17 +135,19 @@ function App() {
               <TableRow>
                 <TableCell><b>Timestamp</b></TableCell>
                 <TableCell><b>Debugging Level</b></TableCell>
-                <TableCell><b>Source</b></TableCell>
+                <TableCell><b>Host</b></TableCell>
+                <TableCell><b>App Name</b></TableCell>
                 <TableCell><b>Log Messages</b></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {logs.map((log,index) => (
                 <TableRow sx={{backgroundColor:getColor(log_lvl[index])}}>                  
-                  <TableCell>{time[index]}</TableCell>
-                  <TableCell>{debug[index]}</TableCell>
-                  <TableCell>{source[index]}</TableCell>
-                  <TableCell>{log}</TableCell>
+                  <TableCell><pre>{time[index]}</pre></TableCell>
+                  <TableCell><pre>{debug[index]}</pre></TableCell>
+                  <TableCell><pre>{host[index]}</pre></TableCell>
+                  <TableCell><pre>{app_name[index]}</pre></TableCell>
+                  <TableCell><pre>{log}</pre></TableCell>
                   {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
                 </TableRow>
               ))}
@@ -162,9 +166,10 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
       const id = data.results[key].search_types;
       const message: string[] = [];
       const timestamp: string[] =[];
-      const source: string[] =[];
+      const host:string[] = []; 
       const debug: string[] =[];
       const log_level: number[] =[];
+      const app_name: string[] = [];
       for (const keys in id) {
         if ("messages" in id[keys]) {
           const logs = id[keys].messages;
@@ -174,9 +179,8 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
             timestamp.push(
               `${formattedTimestamp}`
             );
-            source.push(
-              `${logs[msg]["message"]["source"]}`
-            )
+            host.push(logs[msg]["message"]["source"])
+            app_name.push(logs[msg]["message"]["application_name"]); 
             const text = logs[msg]["message"]["message"];
             const [debug_level, log_message,level] = logLevel(text);
             debug.push(debug_level);
@@ -184,7 +188,7 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
             log_level.push(level);
 
           }
-          return [timestamp,source,debug,message,log_level];
+          return [timestamp,host,debug,message,log_level,app_name];
         }
       }
     }
