@@ -76,7 +76,7 @@ function App() {
         {
           query: {
             type: "elasticsearch",
-            query_string: "application_name:gda",
+            query_string: "beamline:i15 AND application_name:gda",
           },
           timerange: {
             from: 300,
@@ -181,9 +181,10 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
             );
             host.push(logs[msg]["message"]["source"])
             app_name.push(logs[msg]["message"]["application_name"]); 
-            const text = logs[msg]["message"]["message"];
-            const [debug_level, log_message,level] = logLevel(text);
-            debug.push(debug_level);
+            const level = logs[msg]["message"]["level"];
+            const log_message = logs[msg]["message"]["full_message"];
+            const log_level_str = getLogLevel(level);
+            debug.push(log_level_str);
             message.push(log_message);
             log_level.push(level);
 
@@ -195,33 +196,18 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
   }
 }
 
-function logLevel(text: string): [string, string, number] {
-  const debug_levels: {[key: string]: number} = {
-    "EMERG":0,
-    "PANIC":0,
-    "ALERT":1,
-    "CRIT":2,
-    "ERROR":3, 
-    "WARN":4, 
-    "NOTICE":5, 
-    "INFO":6,
-    "DEBUG":7,};
-  const words = text.split(/\s+/);
-  const firstWord = words[0] || '';  
-  const restOfText = words.slice(2).join(' ');
-  let debug = "";
-  let message = "";
-  let level_val:number = 0;
-  if (firstWord in debug_levels) {
-    debug = firstWord;
-    message = restOfText;
-    level_val = debug_levels[firstWord];
-  } else {
-    debug = "UNKNOWN";
-    message = text;
-    level_val = 7;
-  }
-  return [debug, message, level_val];
+function getLogLevel(level_val:number): string {
+  const log_levels: {[key: number]: string} = {
+    0:"EMERG",
+    1:"ALERT",
+    2:"CRIT",
+    3:"ERROR", 
+    4:"WARN", 
+    5:"NOTICE", 
+    6:"INFO",
+    7:"DEBUG",};
+  const level = log_levels[level_val] || "UNKNOWN";
+  return level;
 }
 async function readFile(): Promise<string> {
   const filePath = "src/token.txt";
