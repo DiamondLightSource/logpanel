@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@emotion/react";
-import { useEffect, useState, useReducer } from "react";
+import { useEffect, useState, useReducer, useMemo, useRef } from "react";
 import Log_Menu from "./components/Log_Menu.tsx";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
@@ -7,6 +7,11 @@ import {
   PayloadInterface,
   ActionType,
   QueryString,
+  LogRecord,
+  LogData,
+  LogMessageApplication,
+  LogMessageCluster,
+  Messages,
 } from "./schema/interfaces.ts";
 import { payload } from "./schema/payload.ts";
 
@@ -20,26 +25,31 @@ import Paper from "@mui/material/Paper";
 import { TableHead } from "@mui/material";
 import { log_levels } from "./schema/Log_Levels.ts";
 
-const apiURL = "/api/views/search/sync";
-const password = "token";
-let username: string;
-const query: QueryString = {};
+function App() {
+  const username = useRef("");
+  const apiURL = "/api/views/search/sync";
+  const password = "token";
+  const query: QueryString = {};
 
-const ACTIONS = {
-  LOGFILTER: "level",
-  BEAMLINE: "beamline",
-  APP: "application",
-};
+  const ACTIONS = {
+    LOGFILTER: "level",
+    BEAMLINE: "beamline",
+    APP: "application",
+  };
 
-class MessageReturn {
-  timestamp: string[] = [];
-  host: string[] = [];
-  debug: string[] = [];
-  log_message: string[] = [];
-  log_level: number[] = [];
-  app_name: string[] = [];
-}
-  const [LogResponse,setlogResponse] = useState<MessageReturn>(new MessageReturn());
+  const EmptyLogRecord = useMemo<LogRecord>(
+    () => ({
+      timestamp: [],
+      host: [],
+      log_level_str: [],
+      log_message: [],
+      log_level: [],
+      app_name: [],
+    }),
+    [],
+  );
+
+  const [LogResponse, setlogResponse] = useState<LogRecord>(EmptyLogRecord);
   const [logPayload, handlePayload] = useReducer(reducer, payload);
   const [logFilter, setLogfilter] = useState(7);
 
@@ -82,10 +92,10 @@ class MessageReturn {
   }
 
   useEffect(() => {
-    console.log(logPayload.queries[0].query.query_string);
     async function fetchData(
       url: string,
       username: string,
+
       password: string,
       payload: object,
     ): Promise<undefined> {
@@ -112,7 +122,7 @@ class MessageReturn {
 
         // Parsing the response as JSON
         const logdata = await response.json();
-        const ApiResponse: MessageReturn = getMessage(logdata) ||  new MessageReturn();
+        const ApiResponse: LogRecord = getMessage(logdata) || EmptyLogRecord;
         setlogResponse(ApiResponse);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -124,11 +134,11 @@ class MessageReturn {
     (async () => {
       try {
         await readFile().then(content => {
-          username = content;
+          username.current = content;
           // Run API call using parameters
           (async () => {
             try {
-              await fetchData(apiURL, username, password, payload);
+              await fetchData(apiURL, username.current, password, payload);
             } catch (error) {
               console.error("Error:", error);
             }
@@ -138,13 +148,13 @@ class MessageReturn {
         console.error("Error collecting password:", error);
       }
     })();
-  }, [logPayload]);
+  }, [logPayload, EmptyLogRecord]);
 
   return (
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
       <Log_Menu
-        logFilterValue={logfilter}
+        logFilterValue={logFilter}
         onLogFilterChange={handleLogFilterChange}
       />
       <TextField
@@ -184,19 +194,31 @@ class MessageReturn {
               </TableRow>
             </TableHead>
             <TableBody>
-              {LogResponse.timestamp.map((timestamp,index) => {                
-                  return (
-                  <TableRow sx={{backgroundColor:getColor(LogResponse.log_level[index])}}>                 
-                  <TableCell><pre>{timestamp}</pre></TableCell>
-                  <TableCell><pre>{LogResponse.debug[index]}</pre></TableCell>
-                  <TableCell><pre>{LogResponse.host[index]}</pre></TableCell>
-                  <TableCell><pre>{LogResponse.app_name[index]}</pre></TableCell>
-                  <TableCell>{LogResponse.log_message[index]}</TableCell>
-                  {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
+              {LogResponse.timestamp.map((timestamp, index) => {
+                return (
+                  <TableRow
+                    sx={{
+                      backgroundColor: getColor(LogResponse.log_level[index]),
+                    }}
+                  >
+                    <TableCell>
+                      <pre>{timestamp}</pre>
+                    </TableCell>
+                    <TableCell>
+                      <pre>{LogResponse.log_level_str[index]}</pre>
+                    </TableCell>
+                    <TableCell>
+                      <pre>{LogResponse.host[index]}</pre>
+                    </TableCell>
+                    <TableCell>
+                      <pre>{LogResponse.app_name[index]}</pre>
+                    </TableCell>
+                    <TableCell>{LogResponse.log_message[index]}</TableCell>
+                    {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
                   </TableRow>
-              );
+                );
               })}
-            </TableBody>            
+            </TableBody>
           </Table>
         </TableContainer>
       </BoxBasic>
@@ -204,40 +226,48 @@ class MessageReturn {
   );
 }
 
-function getMessage(logging: JSON): MessageReturn | undefined {
-  const data = JSON.parse(JSON.stringify(logging));
-  for (const key in data.results) {
-    if ("search_types" in data.results[key]) {
-      const id = data.results[key].search_types;
-      const log_message: string[] = [];
-      const timestamp: string[] =[];
-      const host:string[] = []; 
-      const debug: string[] =[];
-      const log_level: number[] =[];
-      const app_name: string[] = [];
-      for (const keys in id) {
-        if ("messages" in id[keys]) {
-          const logs = id[keys].messages;
-          // populate different components of logged data and identifying log level
-          for (const msg in logs) {
-            const formattedTimestamp = logs[msg]["message"][
-              "timestamp"
-            ].replace(/[TZ]/g, " ");
-            timestamp.push(`${formattedTimestamp}`);
-            host.push(logs[msg]["message"]["source"]);
-            app_name.push(logs[msg]["message"]["application_name"]);
-            const level = logs[msg]["message"]["level"];
-            const log_message = logs[msg]["message"]["full_message"];
-            const log_level_str = log_levels[level] || "UNKNOWN";
-            debug.push(log_level_str);
-            log_message.push(log_message)
-            log_level.push(level);
-          }
-          return {timestamp,host,debug,log_message,log_level,app_name}  ;
-        }
-      }
+function getMessage(logging: JSON): LogRecord | undefined {
+  const data: LogData = JSON.parse(JSON.stringify(logging));
+  const log_message: string[] = [];
+  const timestamp: string[] = [];
+  const host: string[] = [];
+  const log_level_str: string[] = [];
+  const log_level: number[] = [];
+  const app_name: string[] = [];
+
+  const logs: Messages[] = Object.values(
+    Object.values(data.results)[0].search_types,
+  )[0].messages;
+  for (const msg of logs) {
+    const message: LogMessageApplication | LogMessageCluster = msg.message;
+    const formattedTimestamp = message.timestamp.replace(/[TZ]/g, " ");
+    timestamp.push(`${formattedTimestamp}`);
+    host.push(message.source);
+    if (MessageType(message)) {
+      app_name.push(message.application_name);
+      const level_str = log_levels[message.level] || "UNKNOWN";
+      log_level_str.push(level_str);
+      log_message.push(message.full_message || message.message);
+      log_level.push(message.level);
+    }
+    if (isLogMessageCluster(message)) {
+      app_name.push(message.cluster_name);
+      const level_str = log_levels[message.level] || "UNKNOWN";
+      console.log(`${message.level} and ${message.message}`);
+      log_level_str.push(level_str);
+      log_message.push(message.message);
+      log_level.push(message.level);
+      // some clusters have a different leveling systems and needs exploring
     }
   }
+  return {
+    timestamp,
+    host,
+    log_level_str,
+    log_message,
+    log_level,
+    app_name,
+  };
 }
 
 async function readFile(): Promise<string> {
@@ -260,5 +290,17 @@ const getColor = (level: number) => {
     return "";
   }
 };
+
+function MessageType(
+  _message: LogMessageApplication | LogMessageCluster,
+): _message is LogMessageApplication {
+  return true;
+}
+
+function isLogMessageCluster(
+  _message: LogMessageCluster | LogMessageApplication,
+): _message is LogMessageCluster {
+  return true;
+}
 
 export default App;
