@@ -4,7 +4,7 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
-import { log_levels } from './Log_Levels';
+import { log_levels } from '../schema/Log_Levels';
 
 interface Props {
   logFilterValue: number; 

@@ -1,8 +1,10 @@
 import { ThemeProvider } from "@emotion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useReducer } from "react";
 import Log_Menu from "./components/Log_Menu.tsx";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
+import {Payload_interface,action_type,Query_String} from "./schema/interfaces.ts";
+import { payload } from "./schema/payload.ts";
 
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -11,7 +13,19 @@ import TableContainer from '@mui/material/TableContainer';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import { TableHead } from "@mui/material";
-import { log_levels } from "./components/Log_Levels.tsx";
+import { log_levels } from "./schema/Log_Levels.ts";
+
+const apiURL = "/api/views/search/sync";
+const password = "token";
+let username: string
+const query: Query_String = {};
+
+const ACTIONS = {
+  LOGFILTER: "level",
+  BEAMLINE: "beamline",
+  APP: "application",
+};
+
 
 type getMessageReturn = [string[],string[],string[],string[],number[],string[]]
 
@@ -23,13 +37,33 @@ function App() {
   const [logs, setLogs] = useState<string[]>([]);
   const [log_lvl, setLog_lvl] = useState<number[]>([]);
   const [app_name,setApp_name] = useState<string[]>([]);
-
+  const [logfilter, setLogfilter] = useState<number>(7)
   // Log_Menu Props
-  const [logFilter, setLogFilter] = useState<number>(7);
   const handleLogFilterChange = (newLogFilterValue: number) => {
-    setLogFilter(newLogFilterValue);
+    setLogfilter(newLogFilterValue);
+    handlePayload({type: ACTIONS.LOGFILTER, log_level: newLogFilterValue});
   }
-  useEffect(() => {
+
+  function reducer(payload:Payload_interface,action:action_type) {
+    switch (action.type){
+      case ACTIONS.LOGFILTER:
+        query.filter = `level: <=${action.log_level}`;
+        break;
+      case ACTIONS.BEAMLINE:
+        query.beamline = `beamline: ${action.query_condition}`;
+        break;
+      case ACTIONS.APP:
+        query.app_name = `application_name: ${action.query_condition}`;
+        break;
+          }
+    const query_arr:string[] = Object.values(query)    
+    payload.queries[0].query.query_string = query_arr.join(" AND ");
+    const newPayload = {...payload}
+    return newPayload
+    }
+    const [logPayload, handlePayload] = useReducer(reducer, payload)
+  useEffect(() => { 
+    console.log(logPayload.queries[0].query.query_string); 
     async function fetchData(
       url: string,
       username: string,
@@ -72,46 +106,6 @@ function App() {
       }
     }
 
-    const apiURL = "/api/views/search/sync";
-    const password = "token";
-    let username:string;
-
-    // Add payload for the request
-    const payload = {
-      // id: "661626cbe7b8a27f59bd1175",
-      parameters: [],
-      queries: [
-        {
-          query: {
-            type: "elasticsearch",
-            query_string: "beamline:i15 AND application_name:gda",
-          },
-          timerange: {
-            from: 300,
-            type: "relative",
-          },
-          filters: [],
-          search_types: [
-            {
-              limit: 100,
-              offset: 0,
-              sort: [
-                {
-                  field: "timestamp",
-                  order: "DESC",
-                },
-              ],
-              fields: [],
-              decorators: [],
-              type: "messages",
-              filter: null,
-              filters: [],
-            },
-          ],
-        },
-      ],
-    };
-
     // reads file from folder - add custom API key to this file
     (async () => {
       try {
@@ -131,12 +125,14 @@ function App() {
         console.error("Error collecting password:", error);
       }
     })();
-  }, []);
+  }, [logPayload]);
+
+
 
   return (
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
-      <Log_Menu logFilterValue={logFilter} onLogFilterChange={handleLogFilterChange}/>
+      <Log_Menu logFilterValue={logfilter} onLogFilterChange={handleLogFilterChange}/>
       <BoxBasic>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -151,9 +147,8 @@ function App() {
             </TableHead>
             <TableBody>
               {logs.map((log,index) => {
-                if (log_lvl[index] <= logFilter) {
                   return (
-                  <TableRow sx={{backgroundColor:getColor(log_lvl[index])}}>                 
+                  <TableRow sx={{backgroundColor:getColor(log_lvl[index])}} key={index}>                 
                   <TableCell><pre>{time[index]}</pre></TableCell>
                   <TableCell><pre>{debug[index]}</pre></TableCell>
                   <TableCell><pre>{host[index]}</pre></TableCell>
@@ -162,10 +157,7 @@ function App() {
                   {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
                 </TableRow>                    
                   );
-              } else {
-                  return null
-                }
-              })}
+                })},
             </TableBody>            
           </Table>
         </TableContainer>
