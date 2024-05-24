@@ -1,0 +1,4 @@
+.github
+.yarn
+dist
+node_modules
