@@ -40,11 +40,11 @@ export interface Sort {
 export interface ActionType {
   type: string;
   log_level?: number | 7;
-  query_condition?: string | '';
+  query_condition?: string | "";
 }
 
 export interface QueryString {
-  app_name?: string | '*';
-  beamline?: string | '*';
-  filter?: string | '*';
+  app_name?: string | "*";
+  beamline?: string | "*";
+  filter?: string | "*";
 }

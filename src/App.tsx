@@ -1,33 +1,33 @@
-import { ThemeProvider } from '@emotion/react';
-import { useEffect, useState, useReducer } from 'react';
-import Log_Menu from './components/Log_Menu.tsx';
-import { theme } from './theme';
-import BoxBasic from './components/Box';
+import { ThemeProvider } from "@emotion/react";
+import { useEffect, useState, useReducer } from "react";
+import Log_Menu from "./components/Log_Menu.tsx";
+import { theme } from "./theme";
+import BoxBasic from "./components/Box";
 import {
   PayloadInterface,
   ActionType,
   QueryString,
-} from './schema/interfaces.ts';
-import { payload } from './schema/payload.ts';
+} from "./schema/interfaces.ts";
+import { payload } from "./schema/payload.ts";
 
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import { TableHead } from '@mui/material';
-import { log_levels } from './schema/Log_Levels.ts';
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import { TableHead } from "@mui/material";
+import { log_levels } from "./schema/Log_Levels.ts";
 
-const apiURL = '/api/views/search/sync';
-const password = 'token';
+const apiURL = "/api/views/search/sync";
+const password = "token";
 let username: string;
 const query: QueryString = {};
 
 const ACTIONS = {
-  LOGFILTER: 'level',
-  BEAMLINE: 'beamline',
-  APP: 'application',
+  LOGFILTER: "level",
+  BEAMLINE: "beamline",
+  APP: "application",
 };
 
 type getMessageReturn = [
@@ -69,7 +69,7 @@ function App() {
         break;
     }
     const query_arr: string[] = Object.values(query);
-    payload.queries[0].query.query_string = query_arr.join(' AND ');
+    payload.queries[0].query.query_string = query_arr.join(" AND ");
     const newPayload = { ...payload };
     return newPayload;
   }
@@ -86,33 +86,33 @@ function App() {
         // Creating a basic authentication header
         const headers = new Headers();
         headers.append(
-          'Authorization',
-          'Basic ' + btoa(`${username}:${password}`),
+          "Authorization",
+          "Basic " + btoa(`${username}:${password}`),
         );
-        headers.append('Content-Type', 'application/json');
-        headers.append('X-Requested-By', 'XMLHttpRequest');
+        headers.append("Content-Type", "application/json");
+        headers.append("X-Requested-By", "XMLHttpRequest");
 
         // Making the fetch request
         const response = await fetch(url, {
-          method: 'POST',
+          method: "POST",
           headers: headers,
           body: JSON.stringify(payload),
         });
         // Checking if the response is OK
         if (!response.ok) {
-          throw new Error('Failed to fetch data');
+          throw new Error("Failed to fetch data");
         }
 
         // Parsing the response as JSON
         const logdata = await response.json();
         const [timestamp, host, debug, message, log_level, app_name] =
           getMessage(logdata) || [
-            ['No logs found'],
-            ['No logs found'],
-            ['No logs found'],
-            ['No logs found'],
+            ["No logs found"],
+            ["No logs found"],
+            ["No logs found"],
+            ["No logs found"],
             [7],
-            ['No logs found'],
+            ["No logs found"],
           ];
         setTime(timestamp);
         setHost(host);
@@ -121,7 +121,7 @@ function App() {
         setLog_lvl(log_level);
         setApp_name(app_name);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error("Error fetching data:", error);
         throw error;
       }
     }
@@ -136,12 +136,12 @@ function App() {
             try {
               await fetchData(apiURL, username, password, payload);
             } catch (error) {
-              console.error('Error:', error);
+              console.error("Error:", error);
             }
           })();
         });
       } catch (error) {
-        console.error('Error collecting password:', error);
+        console.error("Error collecting password:", error);
       }
     })();
   }, [logPayload]);
@@ -213,7 +213,7 @@ function App() {
 function getMessage(logging: JSON): undefined | getMessageReturn {
   const data = JSON.parse(JSON.stringify(logging));
   for (const key in data.results) {
-    if ('search_types' in data.results[key]) {
+    if ("search_types" in data.results[key]) {
       const id = data.results[key].search_types;
       const message: string[] = [];
       const timestamp: string[] = [];
@@ -222,19 +222,19 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
       const log_level: number[] = [];
       const app_name: string[] = [];
       for (const keys in id) {
-        if ('messages' in id[keys]) {
+        if ("messages" in id[keys]) {
           const logs = id[keys].messages;
           // populate different components of logged data and identifying log level
           for (const msg in logs) {
-            const formattedTimestamp = logs[msg]['message'][
-              'timestamp'
-            ].replace(/[TZ]/g, ' ');
+            const formattedTimestamp = logs[msg]["message"][
+              "timestamp"
+            ].replace(/[TZ]/g, " ");
             timestamp.push(`${formattedTimestamp}`);
-            host.push(logs[msg]['message']['source']);
-            app_name.push(logs[msg]['message']['application_name']);
-            const level = logs[msg]['message']['level'];
-            const log_message = logs[msg]['message']['full_message'];
-            const log_level_str = log_levels[level] || 'UNKNOWN';
+            host.push(logs[msg]["message"]["source"]);
+            app_name.push(logs[msg]["message"]["application_name"]);
+            const level = logs[msg]["message"]["level"];
+            const log_message = logs[msg]["message"]["full_message"];
+            const log_level_str = log_levels[level] || "UNKNOWN";
             debug.push(log_level_str);
             message.push(log_message);
             log_level.push(level);
@@ -247,7 +247,7 @@ function getMessage(logging: JSON): undefined | getMessageReturn {
 }
 
 async function readFile(): Promise<string> {
-  const filePath = 'src/token.txt';
+  const filePath = "src/token.txt";
   const response = await fetch(filePath);
   if (!response.ok) {
     throw new Error(`Failed to read file: ${filePath}`);
@@ -259,11 +259,11 @@ const getColor = (level: number) => {
   // yellow = #d1a317
   // red = #990f0f
   if (level === 4) {
-    return '#d1a317';
+    return "#d1a317";
   } else if (level < 4) {
-    return '#990f0f';
+    return "#990f0f";
   } else {
-    return '';
+    return "";
   }
 };
 

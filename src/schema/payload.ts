@@ -1,15 +1,15 @@
-import { PayloadInterface } from './interfaces';
+import { PayloadInterface } from "./interfaces";
 export const payload: PayloadInterface = {
   parameters: [],
   queries: [
     {
       query: {
-        type: 'elasticsearch',
-        query_string: '',
+        type: "elasticsearch",
+        query_string: "",
       },
       timerange: {
         from: 300,
-        type: 'relative',
+        type: "relative",
       },
       filters: [],
       search_types: [
@@ -18,13 +18,13 @@ export const payload: PayloadInterface = {
           offset: 0,
           sort: [
             {
-              field: 'timestamp',
-              order: 'DESC',
+              field: "timestamp",
+              order: "DESC",
             },
           ],
           fields: [],
           decorators: [],
-          type: 'messages',
+          type: "messages",
           filter: null,
           filters: [],
         },
