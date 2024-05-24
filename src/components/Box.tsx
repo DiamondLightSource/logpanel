@@ -1,8 +1,8 @@
-import * as React from 'react'
-import Box from '@mui/material/Box'
+import * as React from 'react';
+import Box from '@mui/material/Box';
 
 interface BoxProps {
-  children?: React.ReactNode
+  children?: React.ReactNode;
 }
 
 const BoxBasic = (props: BoxProps) => {
@@ -21,7 +21,7 @@ const BoxBasic = (props: BoxProps) => {
     >
       {props.children}
     </Box>
-  )
-}
+  );
+};
 
-export default BoxBasic
+export default BoxBasic;

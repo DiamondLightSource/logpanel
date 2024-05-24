@@ -1,4 +1,4 @@
-import { PayloadInterface } from './interfaces'
+import { PayloadInterface } from './interfaces';
 export const payload: PayloadInterface = {
   parameters: [],
   queries: [
@@ -31,4 +31,4 @@ export const payload: PayloadInterface = {
       ],
     },
   ],
-}
+};

@@ -1,4 +1,4 @@
-import { createTheme } from '@mui/material/styles'
+import { createTheme } from '@mui/material/styles';
 
 export const theme = createTheme({
   typography: {},
@@ -20,4 +20,4 @@ export const theme = createTheme({
       main: '#173A5E',
     },
   },
-})
+});

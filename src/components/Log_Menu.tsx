@@ -1,14 +1,14 @@
-import * as React from 'react'
-import Box from '@mui/material/Box'
-import InputLabel from '@mui/material/InputLabel'
-import MenuItem from '@mui/material/MenuItem'
-import FormControl from '@mui/material/FormControl'
-import Select, { SelectChangeEvent } from '@mui/material/Select'
-import { log_levels } from '../schema/Log_Levels'
+import * as React from 'react';
+import Box from '@mui/material/Box';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import { log_levels } from '../schema/Log_Levels';
 
 interface Props {
-  logFilterValue: number
-  onLogFilterChange: (newLogFilterValue: number) => void
+  logFilterValue: number;
+  onLogFilterChange: (newLogFilterValue: number) => void;
 }
 
 const BasicSelect: React.FC<Props> = ({
@@ -16,9 +16,9 @@ const BasicSelect: React.FC<Props> = ({
   onLogFilterChange,
 }) => {
   const handleChange = (event: SelectChangeEvent) => {
-    const newLogFilterValue = event.target.value as unknown as number
-    onLogFilterChange(newLogFilterValue)
-  }
+    const newLogFilterValue = event.target.value as unknown as number;
+    onLogFilterChange(newLogFilterValue);
+  };
 
   return (
     <Box sx={{ minWidth: 120 }}>
@@ -39,7 +39,7 @@ const BasicSelect: React.FC<Props> = ({
         </Select>
       </FormControl>
     </Box>
-  )
-}
+  );
+};
 
-export default BasicSelect
+export default BasicSelect;

@@ -7,4 +7,4 @@ export const log_levels: { [key: number]: string } = {
   5: 'NOTICE',
   6: 'INFO',
   7: 'DEBUG',
-}
+};
