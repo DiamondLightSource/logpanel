@@ -1,3 +1,3 @@
 # Logpanel
 
-Graylog frontend that aggregates and streams logs 
+Graylog frontend that aggregates and streams logs
