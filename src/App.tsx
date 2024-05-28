@@ -11,6 +11,7 @@ import {
 import { payload } from "./schema/payload.ts";
 
 import Table from "@mui/material/Table";
+import TextField from "@mui/material/TextField";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
@@ -50,7 +51,21 @@ function App() {
   const [logfilter, setLogfilter] = useState<number>(7);
   const [logPayload, handlePayload] = useReducer(reducer, payload);
 
-  // Log_Menu Props
+  // Payload Modifiers based off of Application Name or Beamline
+  const handleBeamline = (beamline: string) => {
+    if (beamline == "") {
+      beamline = "*";
+    }
+    handlePayload({ type: ACTIONS.BEAMLINE, query_condition: beamline });
+  };
+
+  const handleAppName = (app_name: string) => {
+    if (app_name == "") {
+      app_name = "*";
+    }
+    handlePayload({ type: ACTIONS.APP, query_condition: app_name });
+  };
+
   const handleLogFilterChange = (newLogFilterValue: number) => {
     setLogfilter(newLogFilterValue);
     handlePayload({ type: ACTIONS.LOGFILTER, log_level: newLogFilterValue });
@@ -152,6 +167,20 @@ function App() {
       <Log_Menu
         logFilterValue={logfilter}
         onLogFilterChange={handleLogFilterChange}
+      />
+      <TextField
+        id="app-name"
+        label="Application Name"
+        variant="outlined"
+        margin="normal"
+        onChange={e => handleAppName(e.target.value)}
+      />
+      <TextField
+        id="beamline"
+        label="Beamline"
+        variant="outlined"
+        margin="normal"
+        onChange={e => handleBeamline(e.target.value)}
       />
       <BoxBasic>
         <TableContainer component={Paper}>
