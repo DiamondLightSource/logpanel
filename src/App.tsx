@@ -26,17 +26,20 @@ import { TableHead } from "@mui/material";
 import { log_levels } from "./schema/Log_Levels.ts";
 
 function App() {
+  // Initialize information for Queries and Auth
   const username = useRef("");
   const apiURL = "/api/views/search/sync";
   const password = "token";
   const query: QueryString = {};
 
+  // Hard-code Actions for Reducer Function
   const ACTIONS = {
     LOGFILTER: "level",
     BEAMLINE: "beamline",
     APP: "application",
   };
 
+  // Initialize states
   const EmptyLogRecord = useMemo<LogRecord>(
     () => ({
       timestamp: [],
@@ -73,6 +76,7 @@ function App() {
     handlePayload({ type: ACTIONS.LOGFILTER, log_level: newLogFilterValue });
   };
 
+  // Reducer Function to modify Payload according to hard-coded action
   function reducer(payload: PayloadInterface, action: ActionType) {
     switch (action.type) {
       case ACTIONS.LOGFILTER:
@@ -92,6 +96,7 @@ function App() {
   }
 
   useEffect(() => {
+    // POSTS API Call at Stores Response For Front-End
     async function fetchData(
       url: string,
       username: string,
@@ -106,6 +111,7 @@ function App() {
           "Authorization",
           "Basic " + btoa(`${username}:${password}`),
         );
+        // Adding required headers for API Call
         headers.append("Content-Type", "application/json");
         headers.append("X-Requested-By", "XMLHttpRequest");
 
@@ -130,7 +136,7 @@ function App() {
       }
     }
 
-    // reads file from folder - add custom API key to this file
+    // Calls file for auth and calls POST API call
     (async () => {
       try {
         await readFile().then(content => {
@@ -226,6 +232,7 @@ function App() {
   );
 }
 
+// Collecting relevant information based off of Response Type
 function getMessage(logging: JSON): LogRecord | undefined {
   const data: LogData = JSON.parse(JSON.stringify(logging));
   const log_message: string[] = [];
@@ -243,17 +250,17 @@ function getMessage(logging: JSON): LogRecord | undefined {
     const formattedTimestamp = message.timestamp.replace(/[TZ]/g, " ");
     timestamp.push(`${formattedTimestamp}`);
     host.push(message.source);
+    // Type Checking of API Response
     if (MessageType(message)) {
       app_name.push(message.application_name);
       const level_str = log_levels[message.level] || "UNKNOWN";
       log_level_str.push(level_str);
-      log_message.push(message.full_message || message.message);
+      log_message.push(message.full_message);
       log_level.push(message.level);
     }
     if (isLogMessageCluster(message)) {
       app_name.push(message.cluster_name);
       const level_str = log_levels[message.level] || "UNKNOWN";
-      console.log(`${message.level} and ${message.message}`);
       log_level_str.push(level_str);
       log_message.push(message.message);
       log_level.push(message.level);
@@ -270,6 +277,7 @@ function getMessage(logging: JSON): LogRecord | undefined {
   };
 }
 
+// Function to call API token for authentication (kept locally and to be replaced)
 async function readFile(): Promise<string> {
   const filePath = "src/token.txt";
   const response = await fetch(filePath);
@@ -279,6 +287,7 @@ async function readFile(): Promise<string> {
   return await response.text();
 }
 
+// Select colour of log row based off log level
 const getColor = (level: number) => {
   // yellow = #d1a317
   // red = #990f0f
@@ -291,6 +300,7 @@ const getColor = (level: number) => {
   }
 };
 
+// Type-Checker Functions for API Response
 function MessageType(
   _message: LogMessageApplication | LogMessageCluster,
 ): _message is LogMessageApplication {
