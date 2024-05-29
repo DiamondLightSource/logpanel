@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@emotion/react";
-import { useEffect, useState, useReducer } from "react";
+import { useEffect, useState, useReducer, useMemo, useRef } from "react";
 import Log_Menu from "./components/Log_Menu.tsx";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
@@ -7,6 +7,11 @@ import {
   PayloadInterface,
   ActionType,
   QueryString,
+  LogRecord,
+  LogData,
+  LogMessageApplication,
+  LogMessageCluster,
+  Messages,
 } from "./schema/interfaces.ts";
 import { payload } from "./schema/payload.ts";
 
@@ -20,36 +25,36 @@ import Paper from "@mui/material/Paper";
 import { TableHead } from "@mui/material";
 import { log_levels } from "./schema/Log_Levels.ts";
 
-const apiURL = "/api/views/search/sync";
-const password = "token";
-let username: string;
-const query: QueryString = {};
-
-const ACTIONS = {
-  LOGFILTER: "level",
-  BEAMLINE: "beamline",
-  APP: "application",
-};
-
-type getMessageReturn = [
-  string[],
-  string[],
-  string[],
-  string[],
-  number[],
-  string[],
-];
-
 function App() {
-  // API responses to be shown
-  const [time, setTime] = useState<string[]>([]);
-  const [host, setHost] = useState<string[]>([]);
-  const [debug, setDebug] = useState<string[]>([]);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [log_lvl, setLog_lvl] = useState<number[]>([]);
-  const [app_name, setApp_name] = useState<string[]>([]);
-  const [logfilter, setLogfilter] = useState<number>(7);
+  // Initialize information for Queries and Auth
+  const username = useRef("");
+  const apiURL = "/api/views/search/sync";
+  const password = "token";
+  const query: QueryString = {};
+
+  // Hard-code Actions for Reducer Function
+  const ACTIONS = {
+    LOGFILTER: "level",
+    BEAMLINE: "beamline",
+    APP: "application",
+  };
+
+  // Initialize states
+  const EmptyLogRecord = useMemo<LogRecord>(
+    () => ({
+      timestamp: [],
+      host: [],
+      log_level_str: [],
+      log_message: [],
+      log_level: [],
+      app_name: [],
+    }),
+    [],
+  );
+
+  const [LogResponse, setlogResponse] = useState<LogRecord>(EmptyLogRecord);
   const [logPayload, handlePayload] = useReducer(reducer, payload);
+  const [logFilter, setLogfilter] = useState(7);
 
   // Payload Modifiers based off of Application Name or Beamline
   const handleBeamline = (beamline: string) => {
@@ -71,6 +76,7 @@ function App() {
     handlePayload({ type: ACTIONS.LOGFILTER, log_level: newLogFilterValue });
   };
 
+  // Reducer Function to modify Payload according to hard-coded action
   function reducer(payload: PayloadInterface, action: ActionType) {
     switch (action.type) {
       case ACTIONS.LOGFILTER:
@@ -90,10 +96,11 @@ function App() {
   }
 
   useEffect(() => {
-    console.log(logPayload.queries[0].query.query_string);
+    // POSTS API Call at Stores Response For Front-End
     async function fetchData(
       url: string,
       username: string,
+
       password: string,
       payload: object,
     ): Promise<undefined> {
@@ -104,6 +111,7 @@ function App() {
           "Authorization",
           "Basic " + btoa(`${username}:${password}`),
         );
+        // Adding required headers for API Call
         headers.append("Content-Type", "application/json");
         headers.append("X-Requested-By", "XMLHttpRequest");
 
@@ -120,36 +128,23 @@ function App() {
 
         // Parsing the response as JSON
         const logdata = await response.json();
-        const [timestamp, host, debug, message, log_level, app_name] =
-          getMessage(logdata) || [
-            ["No logs found"],
-            ["No logs found"],
-            ["No logs found"],
-            ["No logs found"],
-            [7],
-            ["No logs found"],
-          ];
-        setTime(timestamp);
-        setHost(host);
-        setDebug(debug);
-        setLogs(message);
-        setLog_lvl(log_level);
-        setApp_name(app_name);
+        const ApiResponse: LogRecord = getMessage(logdata) || EmptyLogRecord;
+        setlogResponse(ApiResponse);
       } catch (error) {
         console.error("Error fetching data:", error);
         throw error;
       }
     }
 
-    // reads file from folder - add custom API key to this file
+    // Calls file for auth and calls POST API call
     (async () => {
       try {
         await readFile().then(content => {
-          username = content;
+          username.current = content;
           // Run API call using parameters
           (async () => {
             try {
-              await fetchData(apiURL, username, password, payload);
+              await fetchData(apiURL, username.current, password, payload);
             } catch (error) {
               console.error("Error:", error);
             }
@@ -159,13 +154,13 @@ function App() {
         console.error("Error collecting password:", error);
       }
     })();
-  }, [logPayload]);
+  }, [logPayload, EmptyLogRecord]);
 
   return (
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
       <Log_Menu
-        logFilterValue={logfilter}
+        logFilterValue={logFilter}
         onLogFilterChange={handleLogFilterChange}
       />
       <TextField
@@ -205,32 +200,30 @@ function App() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {logs.map((log, index) => {
+              {LogResponse.timestamp.map((timestamp, index) => {
                 return (
                   <TableRow
-                    sx={{ backgroundColor: getColor(log_lvl[index]) }}
-                    key={index}
+                    sx={{
+                      backgroundColor: getColor(LogResponse.log_level[index]),
+                    }}
                   >
                     <TableCell>
-                      <pre>{time[index]}</pre>
+                      <pre>{timestamp}</pre>
                     </TableCell>
                     <TableCell>
-                      <pre>{debug[index]}</pre>
+                      <pre>{LogResponse.log_level_str[index]}</pre>
                     </TableCell>
                     <TableCell>
-                      <pre>{host[index]}</pre>
+                      <pre>{LogResponse.host[index]}</pre>
                     </TableCell>
                     <TableCell>
-                      <pre>{app_name[index]}</pre>
+                      <pre>{LogResponse.app_name[index]}</pre>
                     </TableCell>
-                    <TableCell>
-                      <pre>{log}</pre>
-                    </TableCell>
+                    <TableCell>{LogResponse.log_message[index]}</TableCell>
                     {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
                   </TableRow>
                 );
               })}
-              ,
             </TableBody>
           </Table>
         </TableContainer>
@@ -239,42 +232,52 @@ function App() {
   );
 }
 
-function getMessage(logging: JSON): undefined | getMessageReturn {
-  const data = JSON.parse(JSON.stringify(logging));
-  for (const key in data.results) {
-    if ("search_types" in data.results[key]) {
-      const id = data.results[key].search_types;
-      const message: string[] = [];
-      const timestamp: string[] = [];
-      const host: string[] = [];
-      const debug: string[] = [];
-      const log_level: number[] = [];
-      const app_name: string[] = [];
-      for (const keys in id) {
-        if ("messages" in id[keys]) {
-          const logs = id[keys].messages;
-          // populate different components of logged data and identifying log level
-          for (const msg in logs) {
-            const formattedTimestamp = logs[msg]["message"][
-              "timestamp"
-            ].replace(/[TZ]/g, " ");
-            timestamp.push(`${formattedTimestamp}`);
-            host.push(logs[msg]["message"]["source"]);
-            app_name.push(logs[msg]["message"]["application_name"]);
-            const level = logs[msg]["message"]["level"];
-            const log_message = logs[msg]["message"]["full_message"];
-            const log_level_str = log_levels[level] || "UNKNOWN";
-            debug.push(log_level_str);
-            message.push(log_message);
-            log_level.push(level);
-          }
-          return [timestamp, host, debug, message, log_level, app_name];
-        }
-      }
+// Collecting relevant information based off of Response Type
+function getMessage(logging: JSON): LogRecord | undefined {
+  const data: LogData = JSON.parse(JSON.stringify(logging));
+  const log_message: string[] = [];
+  const timestamp: string[] = [];
+  const host: string[] = [];
+  const log_level_str: string[] = [];
+  const log_level: number[] = [];
+  const app_name: string[] = [];
+
+  const logs: Messages[] = Object.values(
+    Object.values(data.results)[0].search_types,
+  )[0].messages;
+  for (const msg of logs) {
+    const message: LogMessageApplication | LogMessageCluster = msg.message;
+    const formattedTimestamp = message.timestamp.replace(/[TZ]/g, " ");
+    timestamp.push(`${formattedTimestamp}`);
+    host.push(message.source);
+    // Type Checking of API Response
+    if (MessageType(message)) {
+      app_name.push(message.application_name);
+      const level_str = log_levels[message.level] || "UNKNOWN";
+      log_level_str.push(level_str);
+      log_message.push(message.full_message);
+      log_level.push(message.level);
+    }
+    if (isLogMessageCluster(message)) {
+      app_name.push(message.cluster_name);
+      const level_str = log_levels[message.level] || "UNKNOWN";
+      log_level_str.push(level_str);
+      log_message.push(message.message);
+      log_level.push(message.level);
+      // some clusters have a different leveling systems and needs exploring
     }
   }
+  return {
+    timestamp,
+    host,
+    log_level_str,
+    log_message,
+    log_level,
+    app_name,
+  };
 }
 
+// Function to call API token for authentication (kept locally and to be replaced)
 async function readFile(): Promise<string> {
   const filePath = "src/token.txt";
   const response = await fetch(filePath);
@@ -284,6 +287,7 @@ async function readFile(): Promise<string> {
   return await response.text();
 }
 
+// Select colour of log row based off log level
 const getColor = (level: number) => {
   // yellow = #d1a317
   // red = #990f0f
@@ -295,5 +299,18 @@ const getColor = (level: number) => {
     return "";
   }
 };
+
+// Type-Checker Functions for API Response
+function MessageType(
+  _message: LogMessageApplication | LogMessageCluster,
+): _message is LogMessageApplication {
+  return true;
+}
+
+function isLogMessageCluster(
+  _message: LogMessageCluster | LogMessageApplication,
+): _message is LogMessageCluster {
+  return true;
+}
 
 export default App;
