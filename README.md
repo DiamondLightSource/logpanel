@@ -6,7 +6,7 @@
 | Source Code | https://github.com/DiamondLightSource/logpanel |
 | ----------- | ---------------------------------------------- |
 
-Frontend Logpanel, similar to the GDA Logpanel, that aggregates logs in the fromt the Graylog Server
+Frontend Logpanel, similar to the GDA Logpanel, that aggregates logs in the from the Graylog Server
 
 ## Development
 
