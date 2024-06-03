@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@emotion/react";
 import { useEffect, useState, useReducer, useMemo } from "react";
-import Log_Menu from "./components/Log_Menu.tsx";
+import Log_Menu from "./components/LogMenu.tsx";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
 import {
@@ -16,14 +16,13 @@ import {
 import { payload } from "./schema/payload.ts";
 
 import Table from "@mui/material/Table";
-import TextField from "@mui/material/TextField";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { TableHead } from "@mui/material";
-import { log_levels } from "./schema/Log_Levels.ts";
+import { LogLevel } from "./schema/level.ts";
 
 function App() {
   // Initialize information for Queries and Auth
@@ -137,23 +136,14 @@ function App() {
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
       <Log_Menu
-        logFilterValue={logFilter}
-        onLogFilterChange={handleLogFilterChange}
+        level={logFilter}
+        onLevelChange={handleLogFilterChange}
+        beamline=""
+        onBeamlineChange={handleBeamline}
+        application=""
+        onApplicationChange={handleAppName}
       />
-      <TextField
-        id="app-name"
-        label="Application Name"
-        variant="outlined"
-        margin="normal"
-        onChange={e => handleAppName(e.target.value)}
-      />
-      <TextField
-        id="beamline"
-        label="Beamline"
-        variant="outlined"
-        margin="normal"
-        onChange={e => handleBeamline(e.target.value)}
-      />
+
       <BoxBasic>
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -230,14 +220,14 @@ function getMessage(logging: JSON): LogRecord | undefined {
     // Type Checking of API Response
     if (MessageType(message)) {
       app_name.push(message.application_name);
-      const level_str = log_levels[message.level] || "UNKNOWN";
+      const level_str = LogLevel[message.level] || "UNKNOWN";
       log_level_str.push(level_str);
       log_message.push(message.full_message);
       log_level.push(message.level);
     }
     if (isLogMessageCluster(message)) {
       app_name.push(message.cluster_name);
-      const level_str = log_levels[message.level] || "UNKNOWN";
+      const level_str = LogLevel[message.level] || "UNKNOWN";
       log_level_str.push(level_str);
       log_message.push(message.message);
       log_level.push(message.level);
