@@ -23,10 +23,10 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { TableHead } from "@mui/material";
 import { LogLevel } from "./schema/level.ts";
+import { graylogSearch } from "./utils/api/search.ts";
 
 function App() {
   // Initialize information for Queries and Auth
-  const apiURL = "/api/views/search/sync";
   const query: QueryString = {};
 
   // Hard-code Actions for Reducer Function
@@ -93,39 +93,12 @@ function App() {
   }
 
   useEffect(() => {
-    // POSTS API Call at Stores Response For Front-End
-    async function fetchData(url: string, payload: object): Promise<undefined> {
-      try {
-        // Adding required headers for API Call
-        const headers = new Headers();
-        headers.append("Content-Type", "application/json");
-        headers.append("X-Requested-By", "XMLHttpRequest");
-
-        // Making the fetch request
-        const response = await fetch(url, {
-          method: "POST",
-          headers: headers,
-          body: JSON.stringify(payload),
-        });
-        // Checking if the response is OK
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-
-        // Parsing the response as JSON
-        const logdata = await response.json();
-        const ApiResponse: LogRecord = getMessage(logdata) || EmptyLogRecord;
-        setlogResponse(ApiResponse);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        throw error;
-      }
-    }
-
     // Calls file for auth and calls POST API call
     (async () => {
       try {
-        await fetchData(apiURL, payload);
+        const searchResults = await graylogSearch(payload);
+        const messages = getMessage(searchResults);
+        setlogResponse(messages);
       } catch (error) {
         console.error("Error:", error);
       }
@@ -200,8 +173,7 @@ function App() {
 }
 
 // Collecting relevant information based off of Response Type
-function getMessage(logging: JSON): LogRecord | undefined {
-  const data: LogData = JSON.parse(JSON.stringify(logging));
+function getMessage(data: LogData): LogRecord {
   const log_message: string[] = [];
   const timestamp: string[] = [];
   const host: string[] = [];
