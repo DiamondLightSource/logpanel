@@ -3,43 +3,58 @@ import Box from "@mui/material/Box";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
-import { log_levels } from "../schema/Log_Levels";
+import { allLogLevels } from "../schema/level";
+import { Select, TextField } from "@mui/material";
 
 interface Props {
-  logFilterValue: number;
-  onLogFilterChange: (newLogFilterValue: number) => void;
+  level: number;
+  onLevelChange: (level: number) => void;
+  beamline: string;
+  onBeamlineChange: (beamline: string) => void;
+  application: string;
+  onApplicationChange: (application: string) => void;
 }
 
-const BasicSelect: React.FC<Props> = ({
-  logFilterValue,
-  onLogFilterChange,
-}) => {
-  const handleChange = (event: SelectChangeEvent) => {
-    const newLogFilterValue = event.target.value as unknown as number;
-    onLogFilterChange(newLogFilterValue);
-  };
-
+const LogMenu: React.FC<Props> = (props: Props) => {
   return (
     <Box sx={{ minWidth: 120 }}>
       <FormControl fullWidth>
-        <InputLabel id="log-filter-id">Minimum Log Filter</InputLabel>
+        <InputLabel id="log-filter-id">Minimum Log Level</InputLabel>
         <Select
-          labelId="log-filter-id"
           id="log-filter-label"
-          value={logFilterValue.toString()}
-          label="Minimum Log Filter"
-          onChange={handleChange}
+          value={props.level}
+          label="Minimum Log Level"
+          onChange={e =>
+            props.onLevelChange(e.target.value as unknown as number)
+          }
         >
-          {Object.entries(log_levels).map(([level_value, level_name]) => (
-            <MenuItem key={level_value} value={parseInt(level_value)}>
-              {level_name}
+          {allLogLevels().map(([level, num]) => (
+            <MenuItem key={level} value={num}>
+              {level}
             </MenuItem>
           ))}
         </Select>
+        <TextField
+          id="app-name"
+          label="Application Name"
+          variant="outlined"
+          margin="normal"
+          onChange={e => props.onApplicationChange(e.target.value)}
+        >
+          {props.application}
+        </TextField>
+        <TextField
+          id="beamline"
+          label="Beamline"
+          variant="outlined"
+          margin="normal"
+          onChange={e => props.onBeamlineChange(e.target.value)}
+        >
+          {props.beamline}
+        </TextField>
       </FormControl>
     </Box>
   );
 };
 
-export default BasicSelect;
+export default LogMenu;
