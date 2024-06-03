@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@emotion/react";
-import { useEffect, useState, useReducer, useMemo, useRef } from "react";
+import { useEffect, useState, useReducer, useMemo } from "react";
 import Log_Menu from "./components/Log_Menu.tsx";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
@@ -27,9 +27,7 @@ import { log_levels } from "./schema/Log_Levels.ts";
 
 function App() {
   // Initialize information for Queries and Auth
-  const username = useRef("");
   const apiURL = "/api/views/search/sync";
-  const password = "token";
   const query: QueryString = {};
 
   // Hard-code Actions for Reducer Function
@@ -97,21 +95,10 @@ function App() {
 
   useEffect(() => {
     // POSTS API Call at Stores Response For Front-End
-    async function fetchData(
-      url: string,
-      username: string,
-
-      password: string,
-      payload: object,
-    ): Promise<undefined> {
+    async function fetchData(url: string, payload: object): Promise<undefined> {
       try {
-        // Creating a basic authentication header
-        const headers = new Headers();
-        headers.append(
-          "Authorization",
-          "Basic " + btoa(`${username}:${password}`),
-        );
         // Adding required headers for API Call
+        const headers = new Headers();
         headers.append("Content-Type", "application/json");
         headers.append("X-Requested-By", "XMLHttpRequest");
 
@@ -139,19 +126,9 @@ function App() {
     // Calls file for auth and calls POST API call
     (async () => {
       try {
-        await readFile().then(content => {
-          username.current = content;
-          // Run API call using parameters
-          (async () => {
-            try {
-              await fetchData(apiURL, username.current, password, payload);
-            } catch (error) {
-              console.error("Error:", error);
-            }
-          })();
-        });
+        await fetchData(apiURL, payload);
       } catch (error) {
-        console.error("Error collecting password:", error);
+        console.error("Error:", error);
       }
     })();
   }, [logPayload, EmptyLogRecord]);
@@ -275,16 +252,6 @@ function getMessage(logging: JSON): LogRecord | undefined {
     log_level,
     app_name,
   };
-}
-
-// Function to call API token for authentication (kept locally and to be replaced)
-async function readFile(): Promise<string> {
-  const filePath = "src/token.txt";
-  const response = await fetch(filePath);
-  if (!response.ok) {
-    throw new Error(`Failed to read file: ${filePath}`);
-  }
-  return await response.text();
 }
 
 // Select colour of log row based off log level
