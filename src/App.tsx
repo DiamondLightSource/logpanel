@@ -1,19 +1,15 @@
 import { ThemeProvider } from "@emotion/react";
-import { useEffect, useState, useReducer, useMemo } from "react";
 import FilterMenu from "./components/FilterMenu.tsx";
+import { useEffect, useState, useMemo } from "react";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
 import {
-  PayloadInterface,
-  ActionType,
-  QueryString,
   LogRecord,
   LogData,
   LogMessageApplication,
   LogMessageCluster,
   Messages,
 } from "./schema/interfaces.ts";
-import { payload } from "./schema/payload.ts";
 
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -23,19 +19,9 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { TableHead } from "@mui/material";
 import { LogLevel } from "./schema/level.ts";
-import { graylogSearch } from "./utils/api/search.ts";
+import { buildSearchQuery, graylogSearch } from "./utils/api/search.ts";
 
 function App() {
-  // Initialize information for Queries and Auth
-  const query: QueryString = {};
-
-  // Hard-code Actions for Reducer Function
-  const ACTIONS = {
-    LOGFILTER: "level",
-    BEAMLINE: "beamline",
-    APP: "application",
-  };
-
   // Initialize states
   const EmptyLogRecord = useMemo<LogRecord>(
     () => ({
@@ -50,52 +36,19 @@ function App() {
   );
 
   const [LogResponse, setlogResponse] = useState<LogRecord>(EmptyLogRecord);
-  const [logPayload, handlePayload] = useReducer(reducer, payload);
   const [logFilter, setLogfilter] = useState(7);
-
-  // Payload Modifiers based off of Application Name or Beamline
-  const handleBeamline = (beamline: string) => {
-    if (beamline == "") {
-      beamline = "*";
-    }
-    handlePayload({ type: ACTIONS.BEAMLINE, query_condition: beamline });
-  };
-
-  const handleAppName = (app_name: string) => {
-    if (app_name == "") {
-      app_name = "*";
-    }
-    handlePayload({ type: ACTIONS.APP, query_condition: app_name });
-  };
-
-  const handleLogFilterChange = (newLogFilterValue: number) => {
-    setLogfilter(newLogFilterValue);
-    handlePayload({ type: ACTIONS.LOGFILTER, log_level: newLogFilterValue });
-  };
-
-  // Reducer Function to modify Payload according to hard-coded action
-  function reducer(payload: PayloadInterface, action: ActionType) {
-    switch (action.type) {
-      case ACTIONS.LOGFILTER:
-        query.filter = `level: <=${action.log_level}`;
-        break;
-      case ACTIONS.BEAMLINE:
-        query.beamline = `beamline: ${action.query_condition}`;
-        break;
-      case ACTIONS.APP:
-        query.app_name = `application_name: ${action.query_condition}`;
-        break;
-    }
-    const query_arr: string[] = Object.values(query);
-    payload.queries[0].query.query_string = query_arr.join(" AND ");
-    const newPayload = { ...payload };
-    return newPayload;
-  }
+  const [applicationFilter, setApplicationFilter] = useState("*");
+  const [beamlineFilter, setBeamlineFilter] = useState("*");
 
   useEffect(() => {
     // Calls file for auth and calls POST API call
     (async () => {
       try {
+        const payload = buildSearchQuery(
+          logFilter,
+          applicationFilter,
+          beamlineFilter,
+        );
         const searchResults = await graylogSearch(payload);
         const messages = getMessage(searchResults);
         setlogResponse(messages);
@@ -103,18 +56,22 @@ function App() {
         console.error("Error:", error);
       }
     })();
-  }, [logPayload, EmptyLogRecord]);
+  }, [logFilter, applicationFilter, beamlineFilter]);
 
   return (
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
       <FilterMenu
         level={logFilter}
-        onLevelChange={handleLogFilterChange}
+        onLevelChange={setLogfilter}
         beamline=""
-        onBeamlineChange={handleBeamline}
+        onBeamlineChange={beamline =>
+          setBeamlineFilter(beamline === "" ? "*" : beamline)
+        }
         application=""
-        onApplicationChange={handleAppName}
+        onApplicationChange={application =>
+          setApplicationFilter(application == "" ? "*" : application)
+        }
       />
 
       <BoxBasic>
