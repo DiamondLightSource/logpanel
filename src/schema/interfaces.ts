@@ -39,6 +39,7 @@ export interface PayloadSearchType {
 }
 
 export interface LogTableRow {
+  id: string;
   timestamp: string;
   host: string;
   level: string;

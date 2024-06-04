@@ -77,6 +77,7 @@ function App() {
         );
       }
       return {
+        id: message._id,
         timestamp: timestamp,
         host: message.source,
         level: LogLevel[message.level],
@@ -128,6 +129,7 @@ function App() {
               {logTable.map(row => {
                 return (
                   <TableRow
+                    key={row.id}
                     sx={{
                       backgroundColor: colors[row.level] || colors.default,
                     }}
