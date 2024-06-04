@@ -1,14 +1,16 @@
 import { ThemeProvider } from "@emotion/react";
 import FilterMenu from "./components/FilterMenu.tsx";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
 import {
-  LogRecord,
   LogData,
   LogMessageApplication,
   LogMessageCluster,
   Messages,
+  LogTableRow,
+  isLogMessageApplication,
+  isLogMessageCluster,
 } from "./schema/interfaces.ts";
 
 import Table from "@mui/material/Table";
@@ -22,20 +24,8 @@ import { LogLevel } from "./schema/level.ts";
 import { buildSearchQuery, graylogSearch } from "./utils/api/search.ts";
 
 function App() {
-  // Initialize states
-  const EmptyLogRecord = useMemo<LogRecord>(
-    () => ({
-      timestamp: [],
-      host: [],
-      log_level_str: [],
-      log_message: [],
-      log_level: [],
-      app_name: [],
-    }),
-    [],
-  );
-
-  const [LogResponse, setlogResponse] = useState<LogRecord>(EmptyLogRecord);
+  // Init states
+  const [logTable, setLogTable] = useState<LogTableRow[]>([]);
   const [logFilter, setLogfilter] = useState(7);
   const [applicationFilter, setApplicationFilter] = useState("*");
   const [beamlineFilter, setBeamlineFilter] = useState("*");
@@ -50,13 +40,51 @@ function App() {
           beamlineFilter,
         );
         const searchResults = await graylogSearch(payload);
-        const messages = getMessage(searchResults);
-        setlogResponse(messages);
+        const table = buildTable(searchResults);
+        setLogTable(table);
       } catch (error) {
         console.error("Error:", error);
       }
     })();
   }, [logFilter, applicationFilter, beamlineFilter]);
+
+  const colors: { [id: string]: string } = {
+    WARN: "#d1a317",
+    ERROR: "#990f0f",
+    ALERT: "#990f0f",
+    CRIT: "#990f0f",
+    default: "",
+  };
+
+  function buildTable(data: LogData): LogTableRow[] {
+    const logs: Messages[] = Object.values(
+      Object.values(data.results)[0].search_types,
+    )[0].messages;
+    return logs.map(log => {
+      const message: LogMessageApplication | LogMessageCluster = log.message;
+      const timestamp = message.timestamp.replace(/[TZ]/g, " ");
+      let application = "";
+      let text = "";
+      if (isLogMessageApplication(message)) {
+        application = message.application_name;
+        text = message.full_message;
+      } else if (isLogMessageCluster(message)) {
+        application = message.cluster_name;
+        text = message.message;
+      } else {
+        throw new TypeError(
+          "Graylog response not supported: " + JSON.stringify(message),
+        );
+      }
+      return {
+        timestamp: timestamp,
+        host: message.source,
+        level: LogLevel[message.level],
+        text: text,
+        application: application,
+      };
+    });
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -83,40 +111,40 @@ function App() {
                   <b>Timestamp</b>
                 </TableCell>
                 <TableCell>
-                  <b>Debugging Level</b>
+                  <b>Level</b>
                 </TableCell>
                 <TableCell>
                   <b>Host</b>
                 </TableCell>
                 <TableCell>
-                  <b>App Name</b>
+                  <b>Application</b>
                 </TableCell>
                 <TableCell>
-                  <b>Log Messages</b>
+                  <b>Message</b>
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {LogResponse.timestamp.map((timestamp, index) => {
+              {logTable.map(row => {
                 return (
                   <TableRow
                     sx={{
-                      backgroundColor: getColor(LogResponse.log_level[index]),
+                      backgroundColor: colors[row.level] || colors.default,
                     }}
                   >
                     <TableCell>
-                      <pre>{timestamp}</pre>
+                      <pre>{row.timestamp}</pre>
                     </TableCell>
                     <TableCell>
-                      <pre>{LogResponse.log_level_str[index]}</pre>
+                      <pre>{row.level}</pre>
                     </TableCell>
                     <TableCell>
-                      <pre>{LogResponse.host[index]}</pre>
+                      <pre>{row.host}</pre>
                     </TableCell>
                     <TableCell>
-                      <pre>{LogResponse.app_name[index]}</pre>
+                      <pre>{row.application}</pre>
                     </TableCell>
-                    <TableCell>{LogResponse.log_message[index]}</TableCell>
+                    <TableCell>{row.text}</TableCell>
                     {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
                   </TableRow>
                 );
@@ -127,76 +155,6 @@ function App() {
       </BoxBasic>
     </ThemeProvider>
   );
-}
-
-// Collecting relevant information based off of Response Type
-function getMessage(data: LogData): LogRecord {
-  const log_message: string[] = [];
-  const timestamp: string[] = [];
-  const host: string[] = [];
-  const log_level_str: string[] = [];
-  const log_level: number[] = [];
-  const app_name: string[] = [];
-
-  const logs: Messages[] = Object.values(
-    Object.values(data.results)[0].search_types,
-  )[0].messages;
-  for (const msg of logs) {
-    const message: LogMessageApplication | LogMessageCluster = msg.message;
-    const formattedTimestamp = message.timestamp.replace(/[TZ]/g, " ");
-    timestamp.push(`${formattedTimestamp}`);
-    host.push(message.source);
-    // Type Checking of API Response
-    if (MessageType(message)) {
-      app_name.push(message.application_name);
-      const level_str = LogLevel[message.level] || "UNKNOWN";
-      log_level_str.push(level_str);
-      log_message.push(message.full_message);
-      log_level.push(message.level);
-    }
-    if (isLogMessageCluster(message)) {
-      app_name.push(message.cluster_name);
-      const level_str = LogLevel[message.level] || "UNKNOWN";
-      log_level_str.push(level_str);
-      log_message.push(message.message);
-      log_level.push(message.level);
-      // some clusters have a different leveling systems and needs exploring
-    }
-  }
-  return {
-    timestamp,
-    host,
-    log_level_str,
-    log_message,
-    log_level,
-    app_name,
-  };
-}
-
-// Select colour of log row based off log level
-const getColor = (level: number) => {
-  // yellow = #d1a317
-  // red = #990f0f
-  if (level === 4) {
-    return "#d1a317";
-  } else if (level < 4) {
-    return "#990f0f";
-  } else {
-    return "";
-  }
-};
-
-// Type-Checker Functions for API Response
-function MessageType(
-  _message: LogMessageApplication | LogMessageCluster,
-): _message is LogMessageApplication {
-  return true;
-}
-
-function isLogMessageCluster(
-  _message: LogMessageCluster | LogMessageApplication,
-): _message is LogMessageCluster {
-  return true;
 }
 
 export default App;

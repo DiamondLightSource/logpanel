@@ -38,26 +38,12 @@ export interface PayloadSearchType {
   type?: string;
 }
 
-// Reducer Type Interfaces
-export interface ActionType {
-  type: string;
-  log_level?: number | 7;
-  query_condition?: string | "";
-}
-
-export interface QueryString {
-  app_name?: string | "*";
-  beamline?: string | "*";
-  filter?: string | "*";
-}
-
-export interface LogRecord {
-  timestamp: string[];
-  host: string[];
-  log_level_str: string[];
-  log_message: string[];
-  log_level: number[];
-  app_name: string[];
+export interface LogTableRow {
+  timestamp: string;
+  host: string;
+  level: string;
+  text: string;
+  application: string;
 }
 
 // API Response Interfaces
@@ -215,4 +201,17 @@ export interface LogMessageCluster {
   tag: string;
   time: string;
   timestamp: string;
+}
+
+// Type-Checker Functions for API Response
+export function isLogMessageApplication(
+  message: LogMessageApplication | LogMessageCluster,
+): message is LogMessageApplication {
+  return "application_name" in message;
+}
+
+export function isLogMessageCluster(
+  message: LogMessageCluster | LogMessageApplication,
+): message is LogMessageCluster {
+  return "cluster_name" in message;
 }
