@@ -26,6 +26,9 @@ import { buildSearchQuery, graylogSearch } from "./utils/api/search.ts";
 function App() {
   // Init states
   const [logTable, setLogTable] = useState<LogTableRow[]>([]);
+  const [logDisplayError, setLogDisplayError] = useState<string | undefined>(
+    undefined,
+  );
   const [logFilter, setLogfilter] = useState(7);
   const [applicationFilter, setApplicationFilter] = useState("*");
   const [beamlineFilter, setBeamlineFilter] = useState("*");
@@ -43,7 +46,12 @@ function App() {
         const table = buildTable(searchResults);
         setLogTable(table);
       } catch (error) {
-        console.error("Error:", error);
+        console.error(error);
+        if (error instanceof Error) {
+          setLogDisplayError(error.toString());
+        } else {
+          setLogDisplayError("Unknown error: see console");
+        }
       }
     })();
   }, [logFilter, applicationFilter, beamlineFilter]);
@@ -104,56 +112,61 @@ function App() {
       />
 
       <BoxBasic>
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableHead>
-              <TableRow>
-                <TableCell>
-                  <b>Timestamp</b>
-                </TableCell>
-                <TableCell>
-                  <b>Level</b>
-                </TableCell>
-                <TableCell>
-                  <b>Host</b>
-                </TableCell>
-                <TableCell>
-                  <b>Application</b>
-                </TableCell>
-                <TableCell>
-                  <b>Message</b>
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {logTable.map(row => {
-                return (
-                  <TableRow
-                    key={row.id}
-                    sx={{
-                      backgroundColor: colors[row.level] || colors.default,
-                    }}
-                  >
-                    <TableCell>
-                      <pre>{row.timestamp}</pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre>{row.level}</pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre>{row.host}</pre>
-                    </TableCell>
-                    <TableCell>
-                      <pre>{row.application}</pre>
-                    </TableCell>
-                    <TableCell>{row.text}</TableCell>
-                    {/* sx={{ '&:last-child td, &:last-child th': { border: 0 } }} */}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        {(() => {
+          if (logDisplayError === undefined) {
+            return (
+              <TableContainer component={Paper}>
+                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>
+                        <b>Timestamp</b>
+                      </TableCell>
+                      <TableCell>
+                        <b>Level</b>
+                      </TableCell>
+                      <TableCell>
+                        <b>Host</b>
+                      </TableCell>
+                      <TableCell>
+                        <b>Application</b>
+                      </TableCell>
+                      <TableCell>
+                        <b>Message</b>
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {logTable.map(row => (
+                      <TableRow
+                        key={row.id}
+                        sx={{
+                          backgroundColor: colors[row.level] || colors.default,
+                        }}
+                      >
+                        <TableCell>
+                          <pre>{row.timestamp}</pre>
+                        </TableCell>
+                        <TableCell>
+                          <pre>{row.level}</pre>
+                        </TableCell>
+                        <TableCell>
+                          <pre>{row.host}</pre>
+                        </TableCell>
+                        <TableCell>
+                          <pre>{row.application}</pre>
+                        </TableCell>
+                        <TableCell>{row.text}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            );
+          } else {
+            return <p>{logDisplayError}</p>;
+          }
+        })()}
       </BoxBasic>
     </ThemeProvider>
   );
