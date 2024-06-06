@@ -4,7 +4,7 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import { allLogLevels } from "../schema/level";
-import { Select, TextField } from "@mui/material";
+import { Grid, Select, TextField } from "@mui/material";
 
 interface Props {
   level: number;
@@ -17,42 +17,52 @@ interface Props {
 
 const LogMenu: React.FC<Props> = (props: Props) => {
   return (
-    <Box sx={{ minWidth: 120 }}>
-      <FormControl fullWidth>
-        <InputLabel id="log-filter-id">Minimum Log Level</InputLabel>
-        <Select
-          id="log-filter-label"
-          value={props.level}
-          label="Minimum Log Level"
-          onChange={e =>
-            props.onLevelChange(e.target.value as unknown as number)
-          }
-        >
-          {allLogLevels().map(([level, num]) => (
-            <MenuItem key={level} value={num}>
-              {level}
-            </MenuItem>
-          ))}
-        </Select>
-        <TextField
-          id="app-name"
-          label="Application Name"
-          variant="outlined"
-          margin="normal"
-          onChange={e => props.onApplicationChange(e.target.value)}
-        >
-          {props.application}
-        </TextField>
-        <TextField
-          id="beamline"
-          label="Beamline"
-          variant="outlined"
-          margin="normal"
-          onChange={e => props.onBeamlineChange(e.target.value)}
-        >
-          {props.beamline}
-        </TextField>
-      </FormControl>
+    <Box sx={{ padding: "1vw" }}>
+      <Grid container spacing={2}>
+        <Grid item xs={1}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="log-filter-id">Level</InputLabel>
+            <Select
+              id="log-filter-label"
+              value={props.level}
+              label="Level"
+              onChange={e =>
+                props.onLevelChange(e.target.value as unknown as number)
+              }
+            >
+              {allLogLevels().map(([level, num]) => (
+                <MenuItem key={level} value={num}>
+                  {level}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs>
+          <TextField
+            id="app-name"
+            label="Application"
+            variant="outlined"
+            margin="normal"
+            onChange={e => props.onApplicationChange(e.target.value)}
+            fullWidth
+          >
+            {props.application}
+          </TextField>
+        </Grid>
+        <Grid item xs>
+          <TextField
+            id="beamline"
+            label="Beamline"
+            variant="outlined"
+            margin="normal"
+            onChange={e => props.onBeamlineChange(e.target.value)}
+            fullWidth
+          >
+            {props.beamline}
+          </TextField>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
