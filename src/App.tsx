@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@emotion/react";
 import { useEffect, useState, useReducer, useMemo } from "react";
-import Log_Menu from "./components/LogMenu.tsx";
+import FilterMenu from "./components/FilterMenu.tsx";
 import { theme } from "./theme";
 import BoxBasic from "./components/Box";
 import {
@@ -135,7 +135,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <h1>Athena Logpanel </h1>
-      <Log_Menu
+      <FilterMenu
         level={logFilter}
         onLevelChange={handleLogFilterChange}
         beamline=""
