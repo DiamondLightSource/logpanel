@@ -15,7 +15,7 @@ interface Props {
   onApplicationChange: (application: string) => void;
 }
 
-const LogMenu: React.FC<Props> = (props: Props) => {
+const FilterMenu: React.FC<Props> = (props: Props) => {
   return (
     <Box sx={{ padding: "1vw" }}>
       <Grid container spacing={2}>
@@ -67,4 +67,4 @@ const LogMenu: React.FC<Props> = (props: Props) => {
   );
 };
 
-export default LogMenu;
+export default FilterMenu;
