@@ -60,4 +60,4 @@ jobs:
           sed -i "$ a appVersion: ${GITHUB_REF##*/}" ${{ env.HELM_CHART }}/Chart.yaml
           helm dependencies build ${{ env.HELM_CHART }}
           helm package ${{ env.HELM_CHART }} --version ${GITHUB_REF##*/} -d /tmp/
-          helm push /tmp/blueapi-${GITHUB_REF##*/}.tgz oci://ghcr.io/diamondlightsource/charts
+          helm push /tmp/logpanel-${GITHUB_REF##*/}.tgz oci://ghcr.io/diamondlightsource/charts
