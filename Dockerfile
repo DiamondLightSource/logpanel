@@ -19,7 +19,7 @@ RUN yarn build
 
 FROM docker.io/nginxinc/nginx-unprivileged:alpine3.18-slim
 COPY --from=build /usr/src/app/dist /usr/share/nginx/html
-# COPY nginx/conf.d /etc/nginx/nginx.conf
+COPY nginx/prod.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
