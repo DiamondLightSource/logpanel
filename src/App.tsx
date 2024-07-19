@@ -6,6 +6,7 @@ import { LogData } from "./schema/interfaces.ts";
 
 import { buildSearchQuery, graylogSearch } from "./utils/api/search.ts";
 import LogTable from "./components/LogTable.tsx";
+import Disclaimer from "./components/Disclaimer.tsx";
 
 function App() {
   // Init states
@@ -41,6 +42,7 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
+      <Disclaimer />
       <h1>Athena Logpanel </h1>
       <FilterMenu
         level={logFilter}
