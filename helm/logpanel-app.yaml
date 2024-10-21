@@ -1,0 +1,48 @@
+#
+# This file is used for continuous deployment at Diamond, to enable run
+#
+# module load argus
+# kubectl -n logpanel apply -f logpanel-app.yaml
+#
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: logpanel
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: logpanel
+  source:
+    repoURL: https://github.com/DiamondLightSource/logpanel
+    path: helm/logpanel
+    targetRevision: HEAD
+    helm:
+      values: |
+        replicaCount: 3
+        image:
+          tag: latest
+        ingress:
+          enabled: true
+          hosts:
+            - host: logpanel.diamond.ac.uk
+              paths:
+                - path: /
+                  pathType: Prefix
+              tls:
+                - hosts:
+                    - logpanel.diamond.ac.uk
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 500m
+            memory: 512Mi
+  destination:
+    namespace: logpanel
+    name: argus
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
