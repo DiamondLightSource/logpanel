@@ -20,8 +20,6 @@ spec:
     helm:
       values: |
         replicaCount: 3
-        image:
-          tag: latest
         ingress:
           enabled: true
           hosts:
