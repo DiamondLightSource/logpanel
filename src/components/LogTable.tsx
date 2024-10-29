@@ -124,7 +124,7 @@ function LogTable(props: Props) {
         } else if (props.error !== undefined) {
           return <p>{props.error}</p>;
         } else {
-          return <p>An unknown error has occurred</p>;
+          return <p>No data from server</p>;
         }
       })()}
     </BoxBasic>

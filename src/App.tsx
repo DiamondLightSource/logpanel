@@ -1,12 +1,13 @@
 import { ThemeProvider } from "@emotion/react";
 import FilterMenu from "./components/FilterMenu.tsx";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { theme } from "./theme";
 import { LogData } from "./schema/interfaces.ts";
 
 import { buildSearchQuery, graylogSearch } from "./utils/api/search.ts";
 import LogTable from "./components/LogTable.tsx";
 import Disclaimer from "./components/Disclaimer.tsx";
+import { useInterval } from "./utils/interval.ts";
 
 function App() {
   // Init states
@@ -18,7 +19,7 @@ function App() {
   const [applicationFilter, setApplicationFilter] = useState("*");
   const [beamlineFilter, setBeamlineFilter] = useState("*");
 
-  useEffect(() => {
+  useInterval(() => {
     // Calls file for auth and calls POST API call
     (async () => {
       try {
@@ -38,7 +39,7 @@ function App() {
         }
       }
     })();
-  }, [logFilter, applicationFilter, beamlineFilter]);
+  }, 3000);
 
   return (
     <ThemeProvider theme={theme}>
