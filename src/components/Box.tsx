@@ -1,11 +1,22 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
+import { useEffect, useRef } from "react";
 
 interface BoxProps {
   children?: React.ReactNode;
 }
 
 const BoxBasic = (props: BoxProps) => {
+  const boxRef = useRef<null | HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    boxRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [props.children]);
+
   return (
     <Box
       component="section"
